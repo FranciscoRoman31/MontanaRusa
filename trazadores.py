@@ -118,3 +118,29 @@ def generar_trazador_cubico(valores_x, valores_y, frontera=None):
 def generar_trazador_cubico_sujeto(valores_x, valores_y):
     "Véase la documentación de generar_trazador_cubico"
     return generar_trazador_cubico(valores_x, valores_y, 0)
+
+def trazador_a_simbolico(coeficientes_polinomios):
+    "Transforma una matriz de un trazador en uno simbólico de sympy"
+    if not (isinstance(coeficientes_polinomios, np.ndarray)
+            and coeficientes_polinomios.ndim == 2):
+        raise ValueError("el argumento debe ser una matriz de numpy")
+    x = sym.Symbol("x")
+    potencias = [x**i for i in range(coeficientes_polinomios.shape[1])]
+    simbolicos = []
+    for i in range(coeficientes_polinomios.shape[0]):
+        simbolicos.append(sym.lambdify(x, sym.Add( *(coeficiente * potencia
+            for coeficiente, potencia in zip(coeficientes_polinomios[i],
+                                             potencias)) ), "numpy") )
+    return simbolicos
+
+def generar_trazador_cubico_sujeto_simbolico(valores_x, valores_y):
+    simbolicos = trazador_a_simbolico(
+        generar_trazador_cubico_sujeto(valores_x, valores_y) )
+    def trazador(x):
+        for i in range(len(valores_x) - 1):
+            if valores_x[i] <= x < valores_x[i + 1]:
+                return simbolicos[i](x)
+        if valor == valores_x[-1]:
+            return simbolicos[-1](x)
+    return trazador
+
